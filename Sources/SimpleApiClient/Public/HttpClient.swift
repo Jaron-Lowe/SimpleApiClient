@@ -8,7 +8,7 @@ open class HttpClient {
     private let decoder: JSONDecoder
     
     // MARK: Init
-    init(baseUrl: URL, timeoutInterval: TimeInterval = 30.0, decoder: JSONDecoder? = nil) {
+    public init(baseUrl: URL, timeoutInterval: TimeInterval = 30.0, decoder: JSONDecoder? = nil) {
         self.baseUrl = baseUrl
         self.timeoutInterval = timeoutInterval
         if let decoder = decoder {
@@ -21,7 +21,7 @@ open class HttpClient {
     }
     
     // MARK: Actions Methods
-    func send<Response: Decodable>(api: HttpApiRequest, for type: Response.Type) -> AnyPublisher<EventState<Response, Error>, Never> {
+    public func send<Response: Decodable>(api: HttpApiRequest, for type: Response.Type) -> AnyPublisher<EventState<Response, Error>, Never> {
         guard let request = request(for: api) else {
             return Just(EventState.failure(HttpError.malformedRequest))
                 .eraseToAnyPublisher()
@@ -32,7 +32,7 @@ open class HttpClient {
             .mapEventState()
     }
     
-    func send<Response: Decodable, T>(api: HttpApiRequest, for type: Response.Type, keyPath: KeyPath<Response, T>) -> AnyPublisher<EventState<T, Error>, Never> {
+    public func send<Response: Decodable, T>(api: HttpApiRequest, for type: Response.Type, keyPath: KeyPath<Response, T>) -> AnyPublisher<EventState<T, Error>, Never> {
         guard let request = request(for: api) else {
             return Just(EventState.failure(HttpError.malformedRequest))
                 .eraseToAnyPublisher()
