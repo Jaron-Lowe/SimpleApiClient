@@ -1,9 +1,14 @@
 import Foundation
 
+/// Represents an HTTP Request body.
 public enum HttpBody {
+    /// Represents a url encoded form body.
     case form(body: Encodable)
+    
+    /// Represents a json encoded body.
     case json(body: Encodable)
     
+    /// The encodable data associated with the body.
     var body: Encodable {
         switch self {
         case .form(let body), .json(let body):
@@ -11,6 +16,7 @@ public enum HttpBody {
         }
     }
     
+    /// The content type value associated with the body.
     var contentType: String {
         switch self {
         case .form:
@@ -22,6 +28,8 @@ public enum HttpBody {
 }
 
 extension HttpBody: URLRequestApplying {
+    /// Applies the `HttpBody` to a request object.
+    /// - Parameter request: A request for which to apply the body.
     public func apply(to request: inout URLRequest) {
         let wrappedBody = WrappedEncodable(wrappedValue: body)
         let encoder = JSONEncoder()

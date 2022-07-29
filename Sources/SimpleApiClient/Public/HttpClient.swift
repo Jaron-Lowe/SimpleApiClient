@@ -21,25 +21,25 @@ open class HttpClient {
     }
     
     // MARK: Actions Methods
-    public func send<Response: Decodable>(api: HttpApiRequest, for type: Response.Type) -> AnyPublisher<EventState<Response, Error>, Never> {
+    public func send<Api: HttpApiRequest>(api: Api) -> AnyPublisher<AsyncResult<Api.ResponseType, Error>, Never> {
         guard let request = request(for: api) else {
-            return Just(EventState.failure(HttpError.malformedApi))
+            return Just(AsyncResult.failure(HttpError.malformedApi))
                 .eraseToAnyPublisher()
         }
         return URLSession.shared.dataTaskPublisher(for: request)
             .map { $0.data }
-            .decode(type: type, decoder: decoder)
-            .mapEventState()
+            .decode(type: Api.ResponseType.self, decoder: decoder)
+            .mapToAsyncResult()
     }
     
-    public func send<Response: Decodable, T>(api: HttpApiRequest, for type: Response.Type, keyPath: KeyPath<Response, T>) -> AnyPublisher<EventState<T, Error>, Never> {
+    public func send<Api: HttpApiRequest, T>(api: Api, keyPath: KeyPath<Api.ResponseType, T>) -> AnyPublisher<AsyncResult<T, Error>, Never> {
         guard let request = request(for: api) else {
-            return Just(EventState.failure(HttpError.malformedApi))
+            return Just(AsyncResult.failure(HttpError.malformedApi))
                 .eraseToAnyPublisher()
         }
-        return send(request: request, for: type)
+        return send(request: request, for: Api.ResponseType.self)
             .map { $0[keyPath: keyPath] }
-            .mapEventState()
+            .mapToAsyncResult()
     }
 }
 
@@ -50,8 +50,8 @@ private extension HttpClient {
             .decode(type: type, decoder: decoder)
             .eraseToAnyPublisher()
     }
-    
-    func request(for api: HttpApiRequest) -> URLRequest? {
+
+    func request<Api: HttpApiRequest>(for api: Api) -> URLRequest? {
         guard let url = url(for: api) else { return nil }
         var request = URLRequest(url: url, timeoutInterval: timeoutInterval)
         api.method.apply(to: &request)
@@ -61,20 +61,20 @@ private extension HttpClient {
         }
         return request
     }
-    
-    func url(for api: HttpApiRequest) -> URL? {
+
+    func url<Api: HttpApiRequest>(for api: Api) -> URL? {
         guard var components = URLComponents(url: baseUrl, resolvingAgainstBaseURL: true) else {
             return nil
         }
-        
+
         components.path = components.path + api.endpointPath
-    
+
         if case .query(let items) = api.parameters {
             components.queryItems = items.map { key, value in
                 return URLQueryItem(name: key, value: value)
             }
         }
-        
+
         return components.url
     }
 }
