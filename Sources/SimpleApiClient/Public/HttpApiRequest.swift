@@ -17,3 +17,9 @@ public protocol HttpApiRequest {
     /// The parameters to apply to the api's request.
     var parameters: HttpParameters? { get }
 }
+
+// Makes headers and parameters optional.
+extension HttpApiRequest {
+    var headers: HttpHeaders? { return nil }
+    var parameters: HttpParameters? { return nil }
+}
