@@ -23,7 +23,7 @@ open class HttpClient {
     // MARK: Actions Methods
     public func send<Response: Decodable>(api: HttpApiRequest, for type: Response.Type) -> AnyPublisher<EventState<Response, Error>, Never> {
         guard let request = request(for: api) else {
-            return Just(EventState.failure(HttpError.malformedRequest))
+            return Just(EventState.failure(HttpError.malformedApi))
                 .eraseToAnyPublisher()
         }
         return URLSession.shared.dataTaskPublisher(for: request)
@@ -34,7 +34,7 @@ open class HttpClient {
     
     public func send<Response: Decodable, T>(api: HttpApiRequest, for type: Response.Type, keyPath: KeyPath<Response, T>) -> AnyPublisher<EventState<T, Error>, Never> {
         guard let request = request(for: api) else {
-            return Just(EventState.failure(HttpError.malformedRequest))
+            return Just(EventState.failure(HttpError.malformedApi))
                 .eraseToAnyPublisher()
         }
         return send(request: request, for: type)

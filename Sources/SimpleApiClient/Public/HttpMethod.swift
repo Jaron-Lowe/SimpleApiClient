@@ -9,7 +9,7 @@ public enum HttpMethod: String {
 }
 
 extension HttpMethod: URLRequestApplying {
-    public func apply(to request: inout URLRequest) {
+    func apply(to request: inout URLRequest) {
         request.httpMethod = self.rawValue
     }
 }

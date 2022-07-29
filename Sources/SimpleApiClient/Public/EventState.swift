@@ -6,38 +6,38 @@ public enum EventState<Success, Failure> {
     case success(Success)
     case failure(Failure)
     
-    var success: Success? {
+    public var success: Success? {
         guard case .success(let value) = self else {
             return nil
         }
         return value
     }
     
-    var failure: Failure? {
+    public var failure: Failure? {
         guard case .failure(let value) = self else {
             return nil
         }
         return value
     }
     
-    var isInProgress: Bool {
+    public var isInProgress: Bool {
         if case .inProgress = self {
             return true
         }
         return false
     }
     
-    var isSuccess: Bool {
+    public var isSuccess: Bool {
         return (success != nil)
     }
     
-    var isFailure: Bool {
+    public var isFailure: Bool {
         return (failure != nil)
     }
 }
 
 extension Publisher {
-    func mapEventState() -> AnyPublisher<EventState<Output, Failure>, Never> {
+    public func mapEventState() -> AnyPublisher<EventState<Output, Failure>, Never> {
         let result = self
             .map { EventState.success($0) }
             .catch { Just(EventState.failure($0)) }
