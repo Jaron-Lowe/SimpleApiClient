@@ -20,6 +20,11 @@ public protocol HttpApiRequest {
 
 // Makes headers and parameters optional.
 extension HttpApiRequest {
-    var headers: HttpHeaders? { return nil }
-    var parameters: HttpParameters? { return nil }
+    var headers: HttpHeaders? {
+        get { return nil }
+    }
+    
+    var parameters: HttpParameters? {
+        get { return nil }
+    }
 }

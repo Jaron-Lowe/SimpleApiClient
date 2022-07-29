@@ -26,9 +26,7 @@ open class HttpClient {
             return Just(AsyncResult.failure(HttpError.malformedApi))
                 .eraseToAnyPublisher()
         }
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .map { $0.data }
-            .decode(type: Api.ResponseType.self, decoder: decoder)
+        return send(request: request, for: Api.ResponseType.self)
             .mapToAsyncResult()
     }
     
@@ -46,6 +44,7 @@ open class HttpClient {
 private extension HttpClient {
     func send<Response: Decodable>(request: URLRequest, for type: Response.Type) -> AnyPublisher<Response, Error> {
         return URLSession.shared.dataTaskPublisher(for: request)
+            .validateStatusCode()
             .map { $0.data }
             .decode(type: type, decoder: decoder)
             .eraseToAnyPublisher()
@@ -76,5 +75,18 @@ private extension HttpClient {
         }
 
         return components.url
+    }
+}
+
+extension Publisher where Output == URLSession.DataTaskPublisher.Output {
+    func validateStatusCode() -> AnyPublisher<Output, Error> {
+        return self
+            .tryMap {
+                guard let httpResponse = $0.response as? HTTPURLResponse, (200..<300) ~= httpResponse.statusCode else {
+                    throw HttpError.invalidStatusCode
+                }
+                return $0
+            }
+            .eraseToAnyPublisher()
     }
 }
