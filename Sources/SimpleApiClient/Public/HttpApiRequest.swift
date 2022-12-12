@@ -16,6 +16,9 @@ public protocol HttpApiRequest {
     
     /// The parameters to apply to the api's request.
     var parameters: HttpParameters? { get }
+	
+	/// The time it will take for the api to timeout.
+	var timeoutInterval: TimeInterval { get }
 }
 
 // Makes headers and parameters optional.
@@ -27,4 +30,8 @@ extension HttpApiRequest {
     public var parameters: HttpParameters? {
         get { return nil }
     }
+	
+	public var timeoutInterval: TimeInterval {
+		get { return 30.0 }
+	}
 }
