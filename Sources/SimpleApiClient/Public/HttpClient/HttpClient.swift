@@ -9,14 +9,9 @@ open class HttpClient {
 	}()
     
     // MARK: Init
-    public init(baseUrl: URL, decoder: JSONDecoder? = nil) {
+	public init(baseUrl: URL, decoder: JSONDecoder? = nil) {
         self.baseUrl = baseUrl
-        if let decoder = decoder {
-            self.decoder = decoder
-        } else {
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            self.decoder = decoder
-        }
+        if let decoder = decoder { self.decoder = decoder }
+		else { self.decoder = .fromSnakeCaseDecoder }
     }
 }

@@ -20,7 +20,7 @@ public enum HttpBody {
     var contentType: String {
         switch self {
         case .form:
-            return "application/x-www-form-urlencoded"
+            return "application/x-www-form-urlencoded charset=utf-8"
         case .json:
             return "application/json"
         }

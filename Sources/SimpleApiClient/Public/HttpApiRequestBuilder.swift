@@ -11,7 +11,7 @@ final class HttpApiRequestBuilder {
 	
 	func request<Api: HttpApiRequest>(for api: Api) throws -> URLRequest {
 		guard let url = url(for: api) else {
-			throw HttpError.malformedApi
+			throw URLError(.badURL)
 		}
 		var request = URLRequest(url: url, timeoutInterval: api.timeoutInterval)
 		api.method.apply(to: &request)

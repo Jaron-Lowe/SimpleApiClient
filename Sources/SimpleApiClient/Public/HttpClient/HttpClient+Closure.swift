@@ -1,39 +1,27 @@
 import Foundation
 
 extension HttpClient {
-	public func send<Api: HttpApiRequest>(api: Api, completion: ((Result<Api.ResponseType, Error>) -> ())?) {
+	/// Sends an api request and returns with its result in a completion handler.
+	/// - Parameters:
+	///   - api: The api to send.
+	///   - completion: The completion handler containing the result of the sent api.
+	/// - Returns: The `URLSessionDataTask` used to send the api that can be used for cancelling.
+	public func send<Api: HttpApiRequest>(api: Api, completion: ((Result<Api.ResponseType, Error>) -> ())?) -> URLSessionDataTask? {
 		do {
 			let request = try requestBuilder.request(for: api)
-			send(request: request, for: Api.ResponseType.self) { result in
+			return send(request: request, for: Api.ResponseType.self) { result in
 				completion?(result)
 			}
 		} catch {
 			completion?(.failure(error))
-		}
-	}
-	
-	public func send<Api: HttpApiRequest, T>(api: Api, keyPath: KeyPath<Api.ResponseType, T>, completion: ((Result<T, Error>) -> ())?) {
-		
-		do {
-			let request = try requestBuilder.request(for: api)
-			send(request: request, for: Api.ResponseType.self) { result in
-				switch result {
-				case .success(let value):
-					completion?(.success(value[keyPath: keyPath]))
-				case .failure(let error):
-					completion?(.failure(error))
-				}
-			}
-		} catch {
-			completion?(.failure(error))
+			return nil
 		}
 	}
 }
 
 private extension HttpClient {
-	func send<Response: Decodable>(request: URLRequest, for type: Response.Type, completion: ((Result<Response, Error>) -> ())?) {
-		
-		URLSession.shared.dataTask(with: request) { [decoder = self.decoder] data, response, error in
+	func send<Response: Decodable>(request: URLRequest, for type: Response.Type, completion: ((Result<Response, Error>) -> ())?) -> URLSessionDataTask? {
+		let task = URLSession.shared.dataTask(with: request) { [decoder = self.decoder] data, response, error in
 			if let error = error {
 				completion?(.failure(error))
 				return
@@ -46,12 +34,19 @@ private extension HttpClient {
 				return
 			}
 			
-			guard let data = data, let decodedValue = try? decoder.decode(type, from: data) else {
-				completion?(.failure(HttpError.invalidResponseData))
+			guard let data = data else {
+				completion?(.failure(URLError(.badServerResponse)))
+				return
+			}
+			
+			guard let decodedValue = try? decoder.decode(type, from: data) else {
+				completion?(.failure(URLError(.cannotParseResponse)))
 				return
 			}
 			
 			completion?(.success(decodedValue))
 		}
+		task.resume()
+		return task
 	}
 }
