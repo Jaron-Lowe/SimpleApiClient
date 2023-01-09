@@ -5,7 +5,7 @@ extension HttpClient {
 	/// Asynchronously returns the response of the sent api without the ability to cancel.
 	/// - Parameter api: The `HttpApiRequest` to send.
 	/// - Returns: The response of the sent api.
-	public func send<Api: HttpApiRequest>(api: Api) async throws -> Api.ResponseType {
+	public func sendAsync<Api: HttpApiRequest>(api: Api) async throws -> Api.ResponseType {
 		let request = try requestBuilder.request(for: api)
 		return try await send(request: request, for: Api.ResponseType.self).value
 	}
@@ -13,7 +13,7 @@ extension HttpClient {
 	/// Returns a cancellable task that can be awaited to retireve the api response.
 	/// - Parameter api: The `HttpApiRequest` to send.
 	/// - Returns: A task of work for the sending of the api.
-	public func send<Api: HttpApiRequest>(api: Api) -> Task<Api.ResponseType, Error> {
+	public func sendTask<Api: HttpApiRequest>(api: Api) -> Task<Api.ResponseType, Error> {
 		do {
 			let request = try requestBuilder.request(for: api)
 			return send(request: request, for: Api.ResponseType.self)

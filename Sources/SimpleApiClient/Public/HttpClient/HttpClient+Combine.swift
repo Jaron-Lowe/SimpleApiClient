@@ -4,10 +4,10 @@ import Combine
 extension HttpClient {
 	/// Returns a publisher for sending an api.
 	/// - Parameter api: The api to be sent.
-	public func send<Api: HttpApiRequest>(api: Api) -> AnyPublisher<AsyncResult<Api.ResponseType, Error>, Never> {
+	public func sendPublisher<Api: HttpApiRequest>(api: Api) -> AnyPublisher<AsyncResult<Api.ResponseType, Error>, Never> {
 		do {
 			let request = try requestBuilder.request(for: api)
-			return send(request: request, for: Api.ResponseType.self)
+			return sendPublisher(request: request, for: Api.ResponseType.self)
 				.mapToAsyncResult()
 		} catch {
 			return Just(AsyncResult.failure(error))
@@ -17,7 +17,7 @@ extension HttpClient {
 }
 
 private extension HttpClient {
-	func send<Response: Decodable>(request: URLRequest, for type: Response.Type) -> AnyPublisher<Response, Error> {
+	func sendPublisher<Response: Decodable>(request: URLRequest, for type: Response.Type) -> AnyPublisher<Response, Error> {
 		return URLSession.shared.dataTaskPublisher(for: request)
 			.validateStatusCode()
 			.map { $0.data }
