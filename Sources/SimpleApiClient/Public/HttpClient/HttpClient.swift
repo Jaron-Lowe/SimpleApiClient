@@ -11,7 +11,6 @@ open class HttpClient {
     // MARK: Init
 	public init(baseUrl: URL, decoder: JSONDecoder? = nil) {
         self.baseUrl = baseUrl
-        if let decoder = decoder { self.decoder = decoder }
-		else { self.decoder = .fromSnakeCaseDecoder }
+		self.decoder = decoder ?? .fromSnakeCaseDecoder
     }
 }
