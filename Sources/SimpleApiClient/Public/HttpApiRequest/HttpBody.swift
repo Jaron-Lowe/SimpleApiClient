@@ -36,6 +36,6 @@ extension HttpBody: URLRequestApplying {
         let data = try? encoder.encode(wrappedBody)
         request.httpBody = data
         
-        request.addValue(self.contentType, forHTTPHeaderField: "Content-Type")
+        request.addValue(contentType, forHTTPHeaderField: "Content-Type")
     }
 }

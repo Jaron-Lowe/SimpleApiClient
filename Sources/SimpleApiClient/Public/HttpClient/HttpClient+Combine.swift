@@ -5,14 +5,10 @@ extension HttpClient {
 	/// Returns a publisher for sending an api.
 	/// - Parameter api: The api to be sent.
 	public func sendPublisher<Api: HttpApiRequest>(api: Api) -> AnyPublisher<AsyncResult<Api.ResponseType, Error>, Never> {
-		do {
-			let request = try requestBuilder.request(for: api)
-			return sendPublisher(request: request, for: Api.ResponseType.self)
-				.mapToAsyncResult()
-		} catch {
-			return Just(AsyncResult.failure(error))
-				.eraseToAnyPublisher()
-		}
+		return requestBuilder
+			.requestPublisher(for: api)
+			.flatMap { self.sendPublisher(request: $0, for: Api.ResponseType.self) }
+			.mapToAsyncResult()
 	}
 }
 

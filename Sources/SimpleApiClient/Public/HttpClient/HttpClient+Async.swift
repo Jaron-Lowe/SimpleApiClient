@@ -6,7 +6,7 @@ extension HttpClient {
 	/// - Parameter api: The `HttpApiRequest` to send.
 	/// - Returns: The response of the sent api.
 	public func sendAsync<Api: HttpApiRequest>(api: Api) async throws -> Api.ResponseType {
-		let request = try requestBuilder.request(for: api)
+		let request = try await requestBuilder.requestTask(for: api).value
 		return try await send(request: request, for: Api.ResponseType.self).value
 	}
 	
@@ -14,11 +14,9 @@ extension HttpClient {
 	/// - Parameter api: The `HttpApiRequest` to send.
 	/// - Returns: A task of work for the sending of the api.
 	public func sendTask<Api: HttpApiRequest>(api: Api) -> Task<Api.ResponseType, Error> {
-		do {
-			let request = try requestBuilder.request(for: api)
-			return send(request: request, for: Api.ResponseType.self)
-		} catch {
-			return Task { throw error }
+		return Task {
+			let request = try await self.requestBuilder.requestTask(for: api).value
+			return try await self.send(request: request, for: Api.ResponseType.self).value
 		}
 	}
 }
