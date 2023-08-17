@@ -67,7 +67,6 @@ extension GetItemApi: HttpApiRequest {
 
 ### Sending an API
 
-TODO
 ```swift
 
 let api = GetItemApi(id: "1234")
