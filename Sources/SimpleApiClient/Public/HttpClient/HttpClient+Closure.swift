@@ -23,30 +23,29 @@ extension HttpClient {
 private extension HttpClient {
 	@discardableResult
 	func send<Response: Decodable>(request: URLRequest, for type: Response.Type, completion: ((Result<Response, Error>) -> ())?) -> URLSessionDataTask? {
-		let task = URLSession.shared.dataTask(with: request) { [decoder = self.decoder] data, response, error in
-			if let error = error {
+		let task = URLSession.shared.dataTask(with: request) { [decoder = self.decoder, invalidType = self.invalidStatusCodeType] data, response, error in
+			if let error {
 				completion?(.failure(error))
 				return
 			}
 			
-			do {
-				try response?.validateStatusCode()
-			} catch {
-				completion?(.failure(error))
-				return
-			}
-			
-			guard let data = data else {
+			guard let data, let response else {
 				completion?(.failure(URLError(.badServerResponse)))
 				return
 			}
 			
-			guard let decodedValue = try? decoder.decode(type, from: data) else {
-				completion?(.failure(URLError(.cannotParseResponse)))
-				return
+			do {
+				let result = try HttpClient.validateAndDecodeResult(
+					response: (data, response),
+					responseType: type,
+					invalidType: invalidType,
+					decoder: decoder
+				)
+				completion?(.success(result))
 			}
-			
-			completion?(.success(decodedValue))
+			catch {
+				completion?(.failure(URLError(.badServerResponse)))
+			}
 		}
 		task.resume()
 		return task
