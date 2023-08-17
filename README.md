@@ -127,7 +127,7 @@ Task {
   do {
     let item = try await myClient.sendAsync(api: GetItemApi(id: "1234"))
   }
-  catch let error as GenericaApiError {
+  catch let error as GenericApiError {
     print(error.errorCode, error.errorMessage)
   }
   catch {
