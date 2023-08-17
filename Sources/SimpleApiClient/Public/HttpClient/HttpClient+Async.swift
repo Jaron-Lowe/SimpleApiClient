@@ -6,8 +6,7 @@ extension HttpClient {
 	/// - Parameter api: The `HttpApiRequest` to send.
 	/// - Returns: The response of the sent api.
 	public func sendAsync<Api: HttpApiRequest>(api: Api) async throws -> Api.ResponseType {
-		let request = try await requestBuilder.requestTask(for: api).value
-		return try await send(request: request, for: Api.ResponseType.self).value
+		return try await sendTask(api: api).value
 	}
 	
 	/// Returns a cancellable task that can be awaited to retireve the api response.
@@ -25,10 +24,13 @@ private extension HttpClient {
 	func send<Response: Decodable>(request: URLRequest, for type: Response.Type) -> Task<Response, Error> {
 		return Task {
 			try Task.checkCancellation()
-			let (responseData, response) = try await URLSession.shared.data(for: request)
-			try response.validateStatusCode()
-			try Task.checkCancellation()
-			return try decoder.decode(type, from: responseData)
+			let response = try await URLSession.shared.data(for: request)
+			return try HttpClient.validateAndDecodeResult(
+				response: response,
+				responseType: type,
+				invalidType: invalidStatusCodeType,
+				decoder: decoder
+			)
 		}
 	}
 }

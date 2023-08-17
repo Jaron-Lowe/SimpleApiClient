@@ -1,3 +1,5 @@
+#if !((os(iOS) && (arch(i386) || arch(arm))) || os(Windows) || os(Linux))
+
 import Foundation
 import Combine
 
@@ -5,8 +7,7 @@ extension HttpClient {
 	/// Returns a publisher for sending an api.
 	/// - Parameter api: The api to be sent.
 	public func sendPublisher<Api: HttpApiRequest>(api: Api) -> AnyPublisher<AsyncResult<Api.ResponseType, Error>, Never> {
-		return requestBuilder
-			.requestPublisher(for: api)
+		return requestBuilder.requestPublisher(for: api)
 			.flatMap { self.sendPublisher(request: $0, for: Api.ResponseType.self) }
 			.mapToAsyncResult()
 	}
@@ -15,9 +16,7 @@ extension HttpClient {
 private extension HttpClient {
 	func sendPublisher<Response: Decodable>(request: URLRequest, for type: Response.Type) -> AnyPublisher<Response, Error> {
 		return URLSession.shared.dataTaskPublisher(for: request)
-			.validateStatusCode()
-			.map { $0.data }
-			.decode(type: type, decoder: decoder)
+			.validateAndDecodeResult(responseType: type, invalidType: invalidStatusCodeType, decoder: decoder)
 			.eraseToAnyPublisher()
 	}
 }
@@ -78,12 +77,18 @@ extension Publisher {
 
 // MARK: - Publisher
 extension Publisher where Output == URLSession.DataTaskPublisher.Output {
-	func validateStatusCode() -> AnyPublisher<Output, Error> {
+	func validateAndDecodeResult<Response: Decodable>(responseType: Response.Type, invalidType: DecodableError.Type?, decoder: JSONDecoder) -> AnyPublisher<Response, Error> {
 		return self
 			.tryMap {
-				try $0.response.validateStatusCode()
-				return $0
+				try HttpClient.validateAndDecodeResult(
+					response: $0,
+					responseType: responseType,
+					invalidType: invalidType,
+					decoder: decoder
+				)
 			}
 			.eraseToAnyPublisher()
 	}
 }
+
+#endif
