@@ -28,12 +28,8 @@ public enum HttpMethod {
             return customValue
         }
     }
-}
-
-extension HttpMethod: URLRequestApplying {
-    /// Applies the `HttpMethod` to a request object.
-    /// - Parameter request: A request for which to apply the method.
-    public func apply(to request: inout URLRequest) {
-        request.httpMethod = self.value
+    
+    func apply(to request: inout URLRequest) {
+        request.httpMethod = value
     }
 }

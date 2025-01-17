@@ -3,13 +3,17 @@ import Combine
 
 final class HttpApiRequestBuilder {
 	// MARK: Properties
+    
 	private let baseUrl: URL
-	private let adapters: [HttpAdapter]
+    private let session: URLSession
+	private let transformers: [HttpRequestTransformer]
 	
 	// MARK: Init
-	init(baseUrl: URL, adapters: [HttpAdapter]) {
+    
+    init(baseUrl: URL, session: URLSession, transformers: [HttpRequestTransformer]) {
 		self.baseUrl = baseUrl
-		self.adapters = adapters
+        self.session = session
+		self.transformers = transformers
 	}
 	
 	func request<Api: HttpApiRequest>(for api: Api) throws -> URLRequest {
@@ -19,7 +23,8 @@ final class HttpApiRequestBuilder {
 		var request = URLRequest(url: url, timeoutInterval: api.timeoutInterval)
 		api.method.apply(to: &request)
 		api.headers?.apply(to: &request)
-		api.parameters?.apply(to: &request)
+        api.queryItems?.apply(to: &request)
+        api.body?.apply(to: &request)
 		return request
 	}
 	
@@ -36,7 +41,7 @@ final class HttpApiRequestBuilder {
 	}
 	
 	func requestPublisher<Api: HttpApiRequest>(for api: Api) -> AnyPublisher<URLRequest, Error> {
-		return Deferred {
+        Deferred {
 			Future {
 				try await self.requestTask(for: api).value
 			}
@@ -44,16 +49,16 @@ final class HttpApiRequestBuilder {
 	}
 	
 	func requestTask<Api: HttpApiRequest>(for api: Api) throws -> Task<URLRequest, Error> {
-		return adaptedRequest(try request(for: api))
+        adaptedRequest(try request(for: api))
 	}
 	
 	func adaptedRequest(_ request: URLRequest) -> Task<URLRequest, Error> {
-		return Task {
-			var adaptableRequest = request
-			for adapter in adapters {
-				adaptableRequest = try await adapter.adapt(request: adaptableRequest).value
+        Task {
+			var transformableRequest = request
+            for transformer in transformers {
+                transformableRequest = try await transformer.transform(request: transformableRequest, session: session).value
 			}
-			return adaptableRequest
+			return transformableRequest
 		}
 	}
 }

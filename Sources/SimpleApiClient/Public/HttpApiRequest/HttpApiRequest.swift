@@ -1,6 +1,5 @@
 import Foundation
 
-
 /// A protocol that represents the request details of an HTTP API.
 public protocol HttpApiRequest {
     associatedtype ResponseType: Decodable
@@ -14,9 +13,12 @@ public protocol HttpApiRequest {
     /// The headers to apply to the api's request.
     var headers: HttpHeaders? { get }
     
-    /// The parameters to apply to the api's request.
-    var parameters: HttpParameters? { get }
-	
+    /// The query items to apply to the api's request.
+    var queryItems: [URLQueryItem]? { get }
+    
+    /// The body to apply to the api's request.
+    var body: HttpBody? { get }
+    
 	/// The time it will take for the api to timeout.
 	var timeoutInterval: TimeInterval { get }
 }
@@ -24,14 +26,14 @@ public protocol HttpApiRequest {
 // Makes headers and parameters optional.
 extension HttpApiRequest {
     public var headers: HttpHeaders? {
-        get { return nil }
+        nil
     }
     
-    public var parameters: HttpParameters? {
-        get { return nil }
+    public var queryItems: [URLQueryItem]? {
+        nil
     }
 	
 	public var timeoutInterval: TimeInterval {
-		get { return 30.0 }
+        30.0
 	}
 }

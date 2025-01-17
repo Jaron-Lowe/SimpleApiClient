@@ -27,6 +27,42 @@ public enum HttpBody {
 		let generateRandom = { UInt32.random(in: .min ... .max) }
 		return String(format: "----%08x%08x", generateRandom(), generateRandom())
 	}
+    
+    func apply(to request: inout URLRequest) {
+        switch self {
+        case .form(let body):
+            var components = URLComponents()
+            components.queryItems = body.map { URLQueryItem(name: $0.key, value: $0.value) }
+            request.httpBody = components.query?.data(using: .utf8)
+            request.addValue(contentType, forHTTPHeaderField: "Content-Type")
+            
+        case .json(let body):
+            let wrappedBody = WrappedEncodable(wrappedValue: body)
+            let encoder = JSONEncoder()
+            let data = try? encoder.encode(wrappedBody)
+            request.httpBody = data
+            request.addValue(contentType, forHTTPHeaderField: "Content-Type")
+            
+        case .binaryImage(let imageData, let name, let imageMimeType):
+            let boundary = multipartBoundary
+            request.addValue(contentType.replacingOccurrences(of: "{{boundary}}", with: boundary), forHTTPHeaderField: "Content-Type")
+            request.httpBody = {
+                return [
+                    [
+                        "--\(boundary)",
+                        "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(UUID().uuidString)\"",
+                        "Content-Type: \(imageMimeType)",
+                        "\r\n",
+                    ].joined(separator: "\r\n").data(using: .utf8)!,
+                    imageData,
+                    "\r\n--\(boundary)--\r\n".data(using: .utf8)!
+                ].reduce(into: Data()) { partialResult, data in
+                    partialResult.append(data)
+                }
+            }()
+            
+        }
+    }
 }
 
 extension HttpBody {
@@ -47,44 +83,4 @@ extension HttpBody {
 			}
 		}
 	}
-}
-
-extension HttpBody: URLRequestApplying {
-    /// Applies the `HttpBody` to a request object.
-    /// - Parameter request: A request for which to apply the body.
-    public func apply(to request: inout URLRequest) {
-		switch self {
-		case .form(let body):
-			var components = URLComponents()
-			components.queryItems = body.map { URLQueryItem(name: $0.key, value: $0.value) }
-			request.httpBody = components.query?.data(using: .utf8)
-			request.addValue(contentType, forHTTPHeaderField: "Content-Type")
-			
-		case .json(let body):
-			let wrappedBody = WrappedEncodable(wrappedValue: body)
-			let encoder = JSONEncoder()
-			let data = try? encoder.encode(wrappedBody)
-			request.httpBody = data
-			request.addValue(contentType, forHTTPHeaderField: "Content-Type")
-			
-		case .binaryImage(let imageData, let name, let imageMimeType):
-			let boundary = multipartBoundary
-			request.addValue(contentType.replacingOccurrences(of: "{{boundary}}", with: boundary), forHTTPHeaderField: "Content-Type")
-			request.httpBody = {
-				return [
-					[
-						"--\(boundary)",
-						"Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(UUID().uuidString)\"",
-						"Content-Type: \(imageMimeType)",
-						"\r\n",
-					].joined(separator: "\r\n").data(using: .utf8)!,
-					imageData,
-					"\r\n--\(boundary)--\r\n".data(using: .utf8)!
-				].reduce(into: Data()) { partialResult, data in
-					partialResult.append(data)
-				}
-			}()
-			
-		}
-    }
 }

@@ -23,7 +23,7 @@ extension HttpClient {
 private extension HttpClient {
 	@discardableResult
 	func send<Response: Decodable>(request: URLRequest, for type: Response.Type, completion: ((Result<Response, Error>) -> ())?) -> URLSessionDataTask? {
-		let task = URLSession.shared.dataTask(with: request) { [decoder = self.decoder, invalidType = self.invalidStatusCodeType] data, response, error in
+		let task = session.dataTask(with: request) { [decoder = self.decoder, invalidType = self.invalidStatusCodeType] data, response, error in
 			if let error {
 				completion?(.failure(error))
 				return
@@ -44,7 +44,7 @@ private extension HttpClient {
 				completion?(.success(result))
 			}
 			catch {
-				completion?(.failure(URLError(.badServerResponse)))
+				completion?(.failure(error))
 			}
 		}
 		task.resume()
