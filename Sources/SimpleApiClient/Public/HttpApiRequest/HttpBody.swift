@@ -46,20 +46,31 @@ public enum HttpBody {
         case .binaryImage(let imageData, let name, let imageMimeType):
             let boundary = multipartBoundary
             request.addValue(contentType.replacingOccurrences(of: "{{boundary}}", with: boundary), forHTTPHeaderField: "Content-Type")
-            request.httpBody = {
-                return [
-                    [
-                        "--\(boundary)",
-                        "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(UUID().uuidString)\"",
-                        "Content-Type: \(imageMimeType)",
-                        "\r\n",
-                    ].joined(separator: "\r\n").data(using: .utf8)!,
-                    imageData,
-                    "\r\n--\(boundary)--\r\n".data(using: .utf8)!
-                ].reduce(into: Data()) { partialResult, data in
-                    partialResult.append(data)
-                }
-            }()
+            
+            var body = Data()
+            
+            // Add headers
+            let headerString = [
+                "--\(boundary)",
+                "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(UUID().uuidString)\(imageMimeType.fileExtension)\"",
+                "Content-Type: \(imageMimeType.contentType)",
+                "", // Empty line to create \r\n\r\n before binary data
+            ].joined(separator: "\r\n")
+            
+            if let headerData = headerString.data(using: .utf8) {
+                body.append(headerData)
+                body.append("\r\n".data(using: .utf8)!) // The second \r\n after headers
+            }
+            
+            // Add binary data
+            body.append(imageData)
+            
+            // Add closing boundary
+            if let closingBoundary = "\r\n--\(boundary)--\r\n".data(using: .utf8) {
+                body.append(closingBoundary)
+            }
+            
+            request.httpBody = body
             
         }
     }
@@ -72,7 +83,7 @@ extension HttpBody {
 		case png
 		case custom(mimeType: String)
 		
-		var contentType: String {
+		public var contentType: String {
 			switch self {
 			case .jpg:
 				return "image/jpeg"
@@ -80,6 +91,17 @@ extension HttpBody {
 				return "image/png"
 			case .custom(let mimeType):
 				return mimeType
+			}
+		}
+		
+		public var fileExtension: String {
+			switch self {
+			case .jpg:
+				return ".jpg"
+			case .png:
+				return ".png"
+			case .custom:
+				return "" // Custom types may not have a standard extension
 			}
 		}
 	}

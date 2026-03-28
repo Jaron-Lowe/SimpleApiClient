@@ -9,7 +9,7 @@ extension HttpQueryItems {
          if #available(iOS 16.0, *) {
              request.url = url.appending(queryItems: self)
          } else {
-             guard let url = request.url, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+             guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
              components.queryItems = self
              request.url = components.url
          }
