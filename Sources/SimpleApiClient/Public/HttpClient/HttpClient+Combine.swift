@@ -15,7 +15,7 @@ extension HttpClient {
 
 private extension HttpClient {
 	func sendPublisher<Response: Decodable>(request: URLRequest, for type: Response.Type) -> AnyPublisher<Response, Error> {
-		return URLSession.shared.dataTaskPublisher(for: request)
+		return session.dataTaskPublisher(for: request)
 			.validateAndDecodeResult(responseType: type, invalidType: invalidStatusCodeType, decoder: decoder)
 			.eraseToAnyPublisher()
 	}

@@ -14,23 +14,21 @@ extension HttpClient {
 	/// - Returns: A task of work for the sending of the api.
 	public func sendTask<Api: HttpApiRequest>(api: Api) -> Task<Api.ResponseType, Error> {
 		return Task {
-			let request = try await self.requestBuilder.requestTask(for: api).value
-			return try await self.send(request: request, for: Api.ResponseType.self).value
+			let request = try await requestBuilder.requestTask(for: api).value
+			return try await send(request: request, for: Api.ResponseType.self)
 		}
 	}
 }
 
 private extension HttpClient {
-	func send<Response: Decodable>(request: URLRequest, for type: Response.Type) -> Task<Response, Error> {
-		return Task {
-			try Task.checkCancellation()
-			let response = try await URLSession.shared.data(for: request)
-			return try HttpClient.validateAndDecodeResult(
-				response: response,
-				responseType: type,
-				invalidType: invalidStatusCodeType,
-				decoder: decoder
-			)
-		}
-	}
+    func send<Response: Decodable>(request: URLRequest, for type: Response.Type) async throws -> Response {
+        try Task.checkCancellation()
+        let response = try await session.data(for: request)
+        return try HttpClient.validateAndDecodeResult(
+            response: response,
+            responseType: type,
+            invalidType: invalidStatusCodeType,
+            decoder: decoder
+        )
+    }
 }
